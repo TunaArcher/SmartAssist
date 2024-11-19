@@ -15,7 +15,7 @@ function getDatabaseMetadataAndSamples($conn, $databaseName, $sampleLimit = 2)
 
     return [
         'metadata' => fetchMetadata($conn, $databaseName, $excludedTables, $excludedColumnsByTable),
-        'samples' => fetchSampleData($conn, $excludedTables, $sampleLimit)
+        'samples' => fetchSampleData($conn, $excludedTables, $sampleLimit, $excludedColumnsByTable)
     ];
 }
 
@@ -117,20 +117,62 @@ function fetchMetadata($conn, $databaseName, $excludedTables = [], $excludedColu
 }
 
 // ฟังก์ชันดึงตัวอย่างข้อมูลจากฐานข้อมูล
-function fetchSampleData($conn, $excludedTables, $sampleLimit)
+// function fetchSampleData($conn, $excludedTables, $sampleLimit)
+// {
+//     $sampleData = [];
+//     $tables = $conn->query("SHOW TABLES");
+
+//     while ($table = $tables->fetch_array()) {
+//         $tableName = $table[0];
+//         if (in_array($tableName, $excludedTables)) continue;
+
+//         $result = $conn->query("SELECT * FROM $tableName LIMIT $sampleLimit");
+//         if ($result) {
+//             $sampleData[$tableName] = $result->fetch_all(MYSQLI_ASSOC);
+//         }
+//     }
+//     return $sampleData;
+// }
+
+function fetchSampleData($conn, $excludedTables = [], $sampleLimit = 2, $excludedColumnsByTable = [])
 {
     $sampleData = [];
     $tables = $conn->query("SHOW TABLES");
 
     while ($table = $tables->fetch_array()) {
         $tableName = $table[0];
+
+        // ข้ามตารางที่ไม่ต้องการ
         if (in_array($tableName, $excludedTables)) continue;
 
-        $result = $conn->query("SELECT * FROM $tableName LIMIT $sampleLimit");
+        // ดึงข้อมูลคอลัมน์ทั้งหมดในตาราง
+        $columnsQuery = $conn->query("SHOW COLUMNS FROM $tableName");
+        $columns = [];
+
+        while ($column = $columnsQuery->fetch_assoc()) {
+            $columnName = $column['Field'];
+
+            // ข้ามคอลัมน์ที่ไม่ต้องการ
+            if (isset($excludedColumnsByTable[$tableName]) && in_array($columnName, $excludedColumnsByTable[$tableName])) {
+                continue;
+            }
+
+            $columns[] = $columnName;
+        }
+
+        // ถ้าไม่มีคอลัมน์ที่เหลือ ให้ข้ามตารางนี้
+        if (empty($columns)) continue;
+
+        // สร้างคำสั่ง SQL ดึงตัวอย่างข้อมูลเฉพาะคอลัมน์ที่เหลือ
+        $columnsList = implode(',', $columns);
+        $query = "SELECT $columnsList FROM $tableName LIMIT $sampleLimit";
+        $result = $conn->query($query);
+
         if ($result) {
             $sampleData[$tableName] = $result->fetch_all(MYSQLI_ASSOC);
         }
     }
+
     return $sampleData;
 }
 
@@ -371,10 +413,6 @@ function formatResponseWithChatGPT($queryResult)
 {
     $prompt = "Based on the following database query result, generate a beautiful and clear response in Thai as a well-structured sentence. Avoid raw data formatting like tables or JSON. Instead, explain the result clearly as natural text.\n\n";
     $prompt .= "Query Result:\n$queryResult\n\n";
-    $prompt .= "Make sure to:\n";
-    $prompt .= "- Summarize the data effectively.\n";
-    $prompt .= "- Use proper Thai grammar and punctuation.\n";
-    $prompt .= "- Present the information in an easy-to-read and user-friendly way.\n";
 
     return callChatGPTAPI($prompt);
 }
