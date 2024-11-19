@@ -72,33 +72,6 @@ function getExcludedTables()
     ];
 }
 
-// ฟังก์ชันดึง Metadata ของตารางในฐานข้อมูล
-// function fetchMetadata($conn, $databaseName, $excludedTables)
-// {
-//     $metadata = [];
-//     $query = "
-//         SELECT T.TABLE_NAME, T.TABLE_COMMENT, C.COLUMN_NAME, C.DATA_TYPE, C.COLUMN_COMMENT
-//         FROM information_schema.TABLES AS T
-//         JOIN information_schema.COLUMNS AS C ON T.TABLE_NAME = C.TABLE_NAME
-//         WHERE T.TABLE_SCHEMA = '$databaseName';
-//     ";
-//     $result = $conn->query($query);
-
-//     if ($result) {
-//         while ($row = $result->fetch_assoc()) {
-//             $tableName = $row['TABLE_NAME'];
-//             if (in_array($tableName, $excludedTables)) continue;
-
-//             $metadata[$tableName]['description'] = $row['TABLE_COMMENT'] ?: '';
-//             $metadata[$tableName]['columns'][$row['COLUMN_NAME']] = [
-//                 'type' => $row['DATA_TYPE'],
-//                 'description' => $row['COLUMN_COMMENT'] ?: $row['COLUMN_NAME']
-//             ];
-//         }
-//     }
-//     return $metadata;
-// }
-
 function fetchMetadata($conn, $databaseName, $excludedTables = [], $excludedColumnsByTable = [])
 {
     $metadata = [];
@@ -133,24 +106,6 @@ function fetchMetadata($conn, $databaseName, $excludedTables = [], $excludedColu
     }
     return $metadata;
 }
-
-// ฟังก์ชันดึงตัวอย่างข้อมูลจากฐานข้อมูล
-// function fetchSampleData($conn, $excludedTables, $sampleLimit)
-// {
-//     $sampleData = [];
-//     $tables = $conn->query("SHOW TABLES");
-
-//     while ($table = $tables->fetch_array()) {
-//         $tableName = $table[0];
-//         if (in_array($tableName, $excludedTables)) continue;
-
-//         $result = $conn->query("SELECT * FROM $tableName LIMIT $sampleLimit");
-//         if ($result) {
-//             $sampleData[$tableName] = $result->fetch_all(MYSQLI_ASSOC);
-//         }
-//     }
-//     return $sampleData;
-// }
 
 function fetchSampleData($conn, $excludedTables = [], $sampleLimit = 2, $excludedColumnsByTable = [])
 {
@@ -283,6 +238,7 @@ function getPatterns()
     ];
 }
 
+// ฟังก์ชันสร้าง Prompt สำหรับ ChatGPT
 // function buildChatGPTPrompt($message, $filteredMetadata, $sampleData, $isJoinRequired = false)
 // {
 //     $prompt = "You are an advanced AI assistant. Based on the provided database structure and sample data, generate an SQL query to answer the following question.\n\n";
@@ -318,12 +274,45 @@ function getPatterns()
 //     return $prompt;
 // }
 
-// ฟังก์ชันสร้าง Prompt สำหรับ ChatGPT
+// function buildChatGPTPrompt($message, $filteredMetadata, $sampleData, $isJoinRequired = false)
+// {
+//     $prompt = "You are an advanced AI assistant. Based on the provided database structure and sample data, generate an SQL query to answer the following question.\n\n";
+    
+//     $prompt .= "**Database Metadata**:\n";
+//     foreach ($filteredMetadata as $table => $tableData) {
+//         $prompt .= "- Table: $table\n";
+//         $prompt .= "  Description: {$tableData['description']}\n";
+//         $prompt .= "  Columns (only necessary ones):\n";
+//         foreach ($tableData['columns'] as $column => $colData) {
+//             $prompt .= "    - $column ({$colData['type']}): {$colData['description']}\n";
+//         }
+//     }
+
+//     $prompt .= "\n**Sample Data** (only necessary rows):\n";
+//     foreach ($sampleData as $table => $rows) {
+//         if (isset($filteredMetadata[$table])) {
+//             $prompt .= "- $table: " . json_encode($rows) . "\n";
+//         }
+//     }
+
+//     $prompt .= "\n**Question**:\n";
+//     $prompt .= "\"$message\"\n\n";
+
+//     $prompt .= "**Instructions**:\n";
+//     $prompt .= "- Analyze the provided database metadata and sample data.\n";
+//     $prompt .= "- Identify only the necessary tables and columns required to answer the question.\n";
+//     $prompt .= "- Generate an optimized SQL query that includes only relevant tables and columns.\n";
+//     $prompt .= "- Exclude unnecessary columns or tables from the query.\n";
+//     $prompt .= "- Include JOIN operations if explicitly required by the question or if data from multiple tables is needed.\n";
+
+//     return $prompt;
+// }
+
 function buildChatGPTPrompt($message, $filteredMetadata, $sampleData, $isJoinRequired = false)
 {
     $prompt = "You are an advanced AI assistant. Based on the provided database structure and sample data, generate an SQL query to answer the following question.\n\n";
-    $prompt .= "**Database Metadata**:\n";
 
+    $prompt .= "**Database Metadata**:\n";
     foreach ($filteredMetadata as $table => $tableData) {
         $prompt .= "- Table: $table\n";
         $prompt .= "  Description: {$tableData['description']}\n";
@@ -336,37 +325,88 @@ function buildChatGPTPrompt($message, $filteredMetadata, $sampleData, $isJoinReq
     $prompt .= "\n**Sample Data**:\n";
     foreach ($sampleData as $table => $rows) {
         if (isset($filteredMetadata[$table])) {
-            $prompt .= "- $table: " . json_encode($rows) . "\n";
+            $prompt .= "- $table: " . json_encode($rows, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . "\n";
         }
     }
 
     $prompt .= "\n**Question**:\n";
     $prompt .= "\"$message\"\n\n";
+
     $prompt .= "**Instructions**:\n";
-    $prompt .= "- Create an SQL query based on the provided database structure and sample data.\n";
+    $prompt .= "- Analyze the provided database metadata and sample data.\n";
+    $prompt .= "- Include all relevant tables and columns in your query.\n";
     $prompt .= "- Ensure the query is optimized and includes conditions explicitly mentioned in the question.\n";
-    $prompt .= "- Only include necessary columns and avoid redundant data.\n";
 
     if ($isJoinRequired) {
-        $prompt .= "- Use JOIN operations if required.\n";
+        $prompt .= "- Use JOIN operations if required to combine data from multiple tables.\n";
     }
 
     return $prompt;
 }
+
 // ฟังก์ชันจัดการผลลัพธ์การ query และการแสดงผล
+// function processChatGPTResponse($conn, $query, $metadata, $tableNames)
+// {
+//     $result = $conn->query($query);
+//     if (!$result || $result->num_rows === 0) return ['columns' => [], 'rows' => []];
+
+//     $columns = array_keys($result->fetch_assoc());
+//     $result->data_seek(0); // รีเซ็ต pointer
+
+//     echo '<pre>';
+
+//     $data = [
+//         'columns' => $columns,
+//         'rows' => $result->fetch_all(MYSQLI_ASSOC)
+//     ];
+
+//     echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+//     exit();
+
+//     return [
+//         'columns' => $columns,
+//         'rows' => $result->fetch_all(MYSQLI_ASSOC)
+//     ];
+// }
+
 function processChatGPTResponse($conn, $query, $metadata, $tableNames)
 {
     $result = $conn->query($query);
     if (!$result || $result->num_rows === 0) return ['columns' => [], 'rows' => []];
 
+    // ดึงข้อมูล Metadata เพื่อเช็ค comment
     $columns = array_keys($result->fetch_assoc());
     $result->data_seek(0); // รีเซ็ต pointer
 
+    // สร้าง Mapping ชื่อคอลัมน์กับคำอธิบาย (comment)
+    $columnDescriptions = [];
+    foreach ($tableNames as $tableName) {
+        if (isset($metadata[$tableName]['columns'])) {
+            foreach ($metadata[$tableName]['columns'] as $columnName => $columnData) {
+                $columnDescriptions[$columnName] = $columnData['description'] ?? $columnName; // ใช้ comment หากมี
+            }
+        }
+    }
+
+    // แทนที่ชื่อคอลัมน์ด้วย comment (หรือคงชื่อเดิมหากไม่มี comment)
+    $columnsWithDescriptions = array_map(function ($col) use ($columnDescriptions) {
+        return $columnDescriptions[$col] ?? $col; // ใช้ comment ถ้ามี หรือใช้ชื่อคอลัมน์แทน
+    }, $columns);
+
+    //     $data = [
+    //     'columns' => $columnsWithDescriptions,
+    //     'rows' => $result->fetch_all(MYSQLI_ASSOC)
+    // ];
+
+    // echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+    // exit();
+
     return [
-        'columns' => $columns,
+        'columns' => $columnsWithDescriptions,
         'rows' => $result->fetch_all(MYSQLI_ASSOC)
     ];
 }
+
 // ฟังก์ชันดึง SQL Query จาก ChatGPT
 function extractQueryFromResponse($response)
 {
