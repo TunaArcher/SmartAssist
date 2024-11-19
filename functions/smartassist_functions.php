@@ -10,7 +10,25 @@ function getDatabaseMetadataAndSamples($conn, $databaseName, $sampleLimit = 2)
     $excludedTables = getExcludedTables();
 
     $excludedColumnsByTable = [
-        'car_stock' => ['car_stock_name', 'car_stock_car_brand', 'car_stock_car_model'],
+        'car_stock' => [
+            'car_stock_name',
+            'car_stock_car_brand',
+            'car_stock_car_model',
+            'car_stock_car_sub_type',
+            'car_stock_remark',
+            'car_stock_condition',
+            'car_stock_img',
+            'promotion_id',
+            'car_stock_location',
+            'car_stock_location_date_at',
+            'car_stock_created_by',
+            'url_3d',
+            'url_space',
+            'car_stock_car_year',
+            'car_stock_car_color',
+            'car_stock_car_color',
+            'car_stock_car_gear',
+        ],
     ];
 
     return [
@@ -109,7 +127,7 @@ function fetchMetadata($conn, $databaseName, $excludedTables = [], $excludedColu
             $metadata[$tableName]['description'] = $row['TABLE_COMMENT'] ?: '';
             $metadata[$tableName]['columns'][$columnName] = [
                 'type' => $row['DATA_TYPE'],
-                'description' => $row['COLUMN_COMMENT'] ?: $columnName
+                'description' => $row['COLUMN_COMMENT'] ?: ''
             ];
         }
     }
@@ -409,13 +427,34 @@ function splitQuestionsWithChatGPT($text)
 //     return callChatGPTAPI($prompt);
 // }
 
-function formatResponseWithChatGPT($queryResult)
+// function formatResponseWithChatGPT($queryResult)
+// {
+//     $prompt = "Based on the following database query result, generate a beautiful and clear response in Thai as a well-structured sentence. Avoid raw data formatting like tables or JSON. Instead, explain the result clearly as natural text.\n\n";
+//     $prompt .= "Query Result:\n$queryResult\n\n";
+
+//     return callChatGPTAPI($prompt);
+// }
+
+function formatResponseWithChatGPT($customerQuestion, $queryResult)
 {
-    $prompt = "Based on the following database query result, generate a beautiful and clear response in Thai as a well-structured sentence. Avoid raw data formatting like tables or JSON. Instead, explain the result clearly as natural text.\n\n";
-    $prompt .= "Query Result:\n$queryResult\n\n";
+    // แปลงข้อมูลตารางเป็น JSON เพื่อส่งไป ChatGPT
+    $tableData = json_encode($queryResult, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+
+    // Prompt ที่ยืดหยุ่น
+    $prompt = "คุณคือผู้ช่วย AI ที่เชี่ยวชาญในการอธิบายข้อมูลให้อยู่ในรูปแบบที่กระชับและเข้าใจง่าย " .
+        "โปรดใช้ข้อมูลที่ได้รับเพื่อเขียนคำตอบให้ลูกค้าในลักษณะ:\n\n" .
+        "1. ตอบคำถามในภาษาไทยที่สุภาพ กระชับ และเข้าใจง่าย\n" .
+        "2. แปลงข้อมูลให้อยู่ในลักษณะเหมาะสม เช่น รายการหรือข้อความบรรยายที่ชัดเจน\n" .
+        "3. หากข้อมูลมีหลายแถว ให้แยกแถวออกเป็นข้อ หรือรายการที่ชัดเจน\n" .
+        "4. หากไม่มีข้อมูลที่เกี่ยวข้อง ให้แจ้งลูกค้าอย่างสุภาพว่า \"ไม่มีข้อมูลที่เกี่ยวข้องในขณะนี้\"\n" .
+        "5. ตัดข้อมูลที่เป็นรหัสหรือละเอียดเกินไป (เช่น ID, รหัสข้อมูล) หากไม่จำเป็นต่อการทำความเข้าใจของลูกค้า\n\n" .
+        "**คำถามของลูกค้า:**\n\"$customerQuestion\"\n\n" .
+        "**ข้อมูลที่ได้รับ:**\n$tableData\n\n" .
+        "โปรดสร้างคำตอบโดยแปลงข้อมูลให้อยู่ในรูปแบบที่เข้าใจง่ายที่สุด";
 
     return callChatGPTAPI($prompt);
 }
+
 
 
 // ฟังก์ชันคำตอบทั่วไป
@@ -532,8 +571,8 @@ function getDynamicAnswerWithChatGPT($conn, $message, $session_id)
 
         // ดึงผลลัพธ์
         $queryResult = processChatGPTResponse($conn, $query, $data['metadata'], array_keys($filteredMetadata));
-        
-        $answerFromGPT = formatResponseWithChatGPT(json_encode($queryResult, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+
+        $answerFromGPT = formatResponseWithChatGPT($message, json_encode($queryResult, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
 
         logPromptData($message, $prompt, $response, $queryResult, $answerFromGPT);
 
