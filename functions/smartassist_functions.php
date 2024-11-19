@@ -329,7 +329,7 @@ function callChatGPTAPI($prompt)
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_POST => true,
         CURLOPT_POSTFIELDS => json_encode([
-            "model" => "gpt-4-turbo",
+            "model" => $_ENV['OPEN_API_VERSION'], // "gpt-3.5-turbo", "gpt-4-turbo", gpt-4
             "messages" => [["role" => "user", "content" => $prompt]]
         ]),
         CURLOPT_HTTPHEADER => [
