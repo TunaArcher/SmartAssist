@@ -7,40 +7,8 @@ if (session_status() === PHP_SESSION_NONE) {
 // ฟังก์ชันหลักสำหรับดึง Metadata และตัวอย่างข้อมูล
 function getDatabaseMetadataAndSamples($conn, $databaseName, $sampleLimit = 2)
 {
-    $excludedTables = getExcludedTables();
-
-    $excludedColumnsByTable = [
-        'car_stock' => [
-            'car_stock_name',
-            'car_stock_car_brand',
-            'car_stock_car_model',
-            'car_stock_car_sub_type',
-            'car_stock_remark',
-            'car_stock_condition',
-            'car_stock_img',
-            'promotion_id',
-            'car_stock_location',
-            'car_stock_location_date_at',
-            'car_stock_created_by',
-            'url_3d',
-            'url_space',
-            'car_stock_car_year',
-            'car_stock_car_color',
-            'car_stock_car_color',
-            'car_stock_car_gear',
-        ],
-    ];
-
-    return [
-        'metadata' => fetchMetadata($conn, $databaseName, $excludedTables, $excludedColumnsByTable),
-        'samples' => fetchSampleData($conn, $excludedTables, $sampleLimit, $excludedColumnsByTable)
-    ];
-}
-
-// ฟังก์ชันดึงรายชื่อตารางที่ยกเว้น
-function getExcludedTables()
-{
-    return [
+    // ยกเว้นตาราง
+    $excludedTables =  [
         'acclimatization_place',
         'autoloan_targeted',
         'car_document',
@@ -69,6 +37,143 @@ function getExcludedTables()
         'setting_car_stock_table',
         'system_logs',
         'targeted'
+    ];
+
+    // ยกเว้นฟิว
+    $excludedColumnsByTable = [
+        'car_stock' => [
+            'car_stock_name',
+            'car_stock_car_brand',
+            'car_stock_car_model',
+            'car_stock_car_sub_type',
+            'car_stock_remark',
+            'car_stock_condition',
+            'car_stock_img',
+            'promotion_id',
+            'car_stock_location',
+            'car_stock_location_date_at',
+            'car_stock_created_by',
+            'url_3d',
+            'url_space',
+            'car_stock_car_year',
+            'car_stock_car_color',
+            'car_stock_car_color',
+            'car_stock_car_gear',
+        ],
+        'car_stock_detail_buy' => [
+            'car_stock_detail_buy_type',
+            'car_stock_detail_buy_floor',
+            'car_stock_detail_buy_price_in',
+            'car_stock_detail_buy_price_fp',
+            'car_stock_detail_buy_vat',
+            'car_stock_detail_buy_bid_address',
+            'car_stock_detail_buy_ower',
+            'car_stock_detail_buy_name',
+            'car_stock_detail_buy_additional_note',
+            'car_stock_detail_buy_bid_date',
+            'car_stock_detail_buy_exprired_tax_date',
+            'car_stock_detail_buy_exprired_act_date',
+            'car_stock_detail_buy_exprired_insurance_date',
+            'car_stock_detail_buy_car_key',
+            'car_stock_detail_buy_branch',
+            'car_stock_detail_buy_fiance_total',
+            'car_stock_detail_buy_sale_no_vat',
+            'car_stock_detail_buy_sale_dow',
+            'car_stock_detail_buy_brand_thai',
+            'car_stock_detail_buy_car_installments',
+            'car_stock_detail_buy_car_number_installments',
+            'car_stock_detail_buy_net_capital',
+            'car_stock_detail_buy_other_cost',
+            'car_stock_detail_buy_mileage',
+            'car_stock_detail_buy_date_car_rebuild_status',
+            'car_stock_detail_buy_date_car_doc_status',
+            'car_stock_detail_buy_created_at',
+            'car_stock_detail_buy_updated_at',
+            'car_stock_detail_buy_created_by',
+        ],
+        'car_stock_owner' => [
+            'car_stock_owner_name',
+            'car_stock_owner_address',
+            'car_stock_owne_card_id',
+            'car_stock_owner_car_type',
+            'car_stock_owner_car_look',
+            // 'car_stock_owner_car_tank_number',
+            // 'car_stock_owner_car_tank_engine_number', // เลข
+            // 'car_stock_owner_car_fuel', // เลข
+            // 'car_stock_owner_tel',
+            'car_stock_owner_date_registration',
+            'car_stock_owner_car_condition',
+            'car_stock_owner_car_remark',
+            'car_stock_owner_book_src',
+            'car_stock_owner_car_weight',
+            'car_stock_owner_car_manual',
+            'car_stock_owner_car_number_owner',
+            'car_stock_owner_car_responsibility',
+            'car_stock_owner_car_experience',
+            'car_stock_owner_car_engine_size',
+            'car_stock_owner_created_by',
+            'car_stock_owner_created_at',
+            'car_stock_owner_updated_at',
+        ],
+        'car_stock_finance' => [
+            'car_stock_finance_kbank',
+            'car_stock_finance_scb',
+            'car_stock_finance_bay',
+            'car_stock_finance_kkp',
+            'car_stock_finance_maket',
+            'car_stock_finance_cimb',
+            'car_stock_finance_oalt',
+            'car_stock_finance_tlt',
+            'car_stock_finance_created_at',
+            'car_stock_finance_updated_at',
+            'car_stock_finance_created_by',
+        ],
+        // 'documents' => [
+        //     'id',
+        //     'doc_type',
+        //     'doc_number',
+        //     'doc_date',
+        //     'title',
+        //     'price',
+        //     'car_stock_id',
+        //     'car_title',
+        //     'customer_id',
+        //     'customer_title',
+        //     'seller_id',
+        //     'seller_title',
+        //     'doc_payment_type',
+        //     'doc_payment_type_etc',
+        //     'cash_flow_name',
+        //     'cheque_nam',
+        //     'cheque_ref',
+        //     'cheque_bank_title',
+        //     'cheque_bank_branch',
+        //     'cheque_bank_no',
+        //     'cheque_bank_date',
+        //     'employee_id',
+        //     'username',
+        //     'filePath',
+        //     'not',
+        //     'doc_detail',
+        //     'reference_number',
+        //     'price_vat',
+        //     'doc_vat',
+        //     'doc_wht',
+        //     'wht_percent',
+        //     'created_at',
+        //     'updated_at',
+        //     'deleted_at',
+        // ]
+        'bookings' => [
+            'customer_grade',
+            'giveaway_list',
+            'booking_note',
+        ]
+    ];
+
+    return [
+        'metadata' => fetchMetadata($conn, $databaseName, $excludedTables, $excludedColumnsByTable),
+        'samples' => fetchSampleData($conn, $excludedTables, $sampleLimit, $excludedColumnsByTable)
     ];
 }
 
@@ -238,76 +343,6 @@ function getPatterns()
     ];
 }
 
-// ฟังก์ชันสร้าง Prompt สำหรับ ChatGPT
-// function buildChatGPTPrompt($message, $filteredMetadata, $sampleData, $isJoinRequired = false)
-// {
-//     $prompt = "You are an advanced AI assistant. Based on the provided database structure and sample data, generate an SQL query to answer the following question.\n\n";
-//     $prompt .= "**Database Metadata**:\n";
-
-//     foreach ($filteredMetadata as $table => $tableData) {
-//         $prompt .= "- Table: $table\n";
-//         $prompt .= "  Description: {$tableData['description']}\n";
-//         $prompt .= "  Columns:\n";
-//         foreach ($tableData['columns'] as $column => $colData) {
-//             $prompt .= "    - $column ({$colData['type']}): {$colData['description']}\n";
-//         }
-//     }
-
-//     $prompt .= "\n**Sample Data**:\n";
-//     foreach ($sampleData as $table => $rows) {
-//         if (isset($filteredMetadata[$table])) {
-//             $prompt .= "- $table: " . json_encode($rows) . "\n";
-//         }
-//     }
-
-//     $prompt .= "\n**Question**:\n";
-//     $prompt .= "\"$message\"\n\n";
-//     $prompt .= "**Instructions**:\n";
-//     $prompt .= "- Create an SQL query based on the provided database structure and sample data.\n";
-//     $prompt .= "- Ensure the query is optimized and includes conditions explicitly mentioned in the question.\n";
-//     $prompt .= "- Only include necessary columns and avoid redundant data.\n";
-
-//     if ($isJoinRequired) {
-//         $prompt .= "- Use JOIN operations if required.\n";
-//     }
-
-//     return $prompt;
-// }
-
-// function buildChatGPTPrompt($message, $filteredMetadata, $sampleData, $isJoinRequired = false)
-// {
-//     $prompt = "You are an advanced AI assistant. Based on the provided database structure and sample data, generate an SQL query to answer the following question.\n\n";
-    
-//     $prompt .= "**Database Metadata**:\n";
-//     foreach ($filteredMetadata as $table => $tableData) {
-//         $prompt .= "- Table: $table\n";
-//         $prompt .= "  Description: {$tableData['description']}\n";
-//         $prompt .= "  Columns (only necessary ones):\n";
-//         foreach ($tableData['columns'] as $column => $colData) {
-//             $prompt .= "    - $column ({$colData['type']}): {$colData['description']}\n";
-//         }
-//     }
-
-//     $prompt .= "\n**Sample Data** (only necessary rows):\n";
-//     foreach ($sampleData as $table => $rows) {
-//         if (isset($filteredMetadata[$table])) {
-//             $prompt .= "- $table: " . json_encode($rows) . "\n";
-//         }
-//     }
-
-//     $prompt .= "\n**Question**:\n";
-//     $prompt .= "\"$message\"\n\n";
-
-//     $prompt .= "**Instructions**:\n";
-//     $prompt .= "- Analyze the provided database metadata and sample data.\n";
-//     $prompt .= "- Identify only the necessary tables and columns required to answer the question.\n";
-//     $prompt .= "- Generate an optimized SQL query that includes only relevant tables and columns.\n";
-//     $prompt .= "- Exclude unnecessary columns or tables from the query.\n";
-//     $prompt .= "- Include JOIN operations if explicitly required by the question or if data from multiple tables is needed.\n";
-
-//     return $prompt;
-// }
-
 function buildChatGPTPrompt($message, $filteredMetadata, $sampleData, $isJoinRequired = false)
 {
     $prompt = "You are an advanced AI assistant. Based on the provided database structure and sample data, generate an SQL query to answer the following question.\n\n";
@@ -343,32 +378,6 @@ function buildChatGPTPrompt($message, $filteredMetadata, $sampleData, $isJoinReq
 
     return $prompt;
 }
-
-// ฟังก์ชันจัดการผลลัพธ์การ query และการแสดงผล
-// function processChatGPTResponse($conn, $query, $metadata, $tableNames)
-// {
-//     $result = $conn->query($query);
-//     if (!$result || $result->num_rows === 0) return ['columns' => [], 'rows' => []];
-
-//     $columns = array_keys($result->fetch_assoc());
-//     $result->data_seek(0); // รีเซ็ต pointer
-
-//     echo '<pre>';
-
-//     $data = [
-//         'columns' => $columns,
-//         'rows' => $result->fetch_all(MYSQLI_ASSOC)
-//     ];
-
-//     echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-//     exit();
-
-//     return [
-//         'columns' => $columns,
-//         'rows' => $result->fetch_all(MYSQLI_ASSOC)
-//     ];
-// }
-
 function processChatGPTResponse($conn, $query, $metadata, $tableNames)
 {
     $result = $conn->query($query);
@@ -450,31 +459,6 @@ function callChatGPTAPI($prompt)
     }
 }
 
-// ฟังก์ชันแยกคำถาม
-function splitQuestionsWithChatGPT($text)
-{
-    $prompt = "Please split the following text into separate questions. If there is more than one question, separate each question by a new line:\n\n\"$text\"";
-    $response = callChatGPTAPI($prompt);
-    return array_filter(array_map('trim', explode("\n", $response)));
-}
-
-// ฟังก์ชันจัดรูปแบบผลลัพธ์
-// function formatResponseWithChatGPT($queryResult) {
-//     $prompt = "Format the following database query result in Thai using HTML tags for clear presentation. Provide only the inner HTML tags and content without enclosing <html> or <body> tags.\n\n";
-//     $prompt .= "Query Result:\n$queryResult\n\n";
-//     $prompt .= "Ensure the response is well-structured with HTML tags for readability, including line breaks and necessary spacing. Display only the content as inner HTML tags.";
-
-//     return callChatGPTAPI($prompt);
-// }
-
-// function formatResponseWithChatGPT($queryResult)
-// {
-//     $prompt = "Based on the following database query result, generate a beautiful and clear response in Thai as a well-structured sentence. Avoid raw data formatting like tables or JSON. Instead, explain the result clearly as natural text.\n\n";
-//     $prompt .= "Query Result:\n$queryResult\n\n";
-
-//     return callChatGPTAPI($prompt);
-// }
-
 function formatResponseWithChatGPT($customerQuestion, $queryResult)
 {
     // แปลงข้อมูลตารางเป็น JSON เพื่อส่งไป ChatGPT
@@ -494,8 +478,6 @@ function formatResponseWithChatGPT($customerQuestion, $queryResult)
 
     return callChatGPTAPI($prompt);
 }
-
-
 
 // ฟังก์ชันคำตอบทั่วไป
 function getGeneralAnswer($message)
@@ -528,68 +510,6 @@ function logPromptData($message, $prompt, $response, $queryResult, $answerFromGP
     // เขียน Log ลงไฟล์
     file_put_contents($logFile, $log, FILE_APPEND);
 }
-
-// // ฟังก์ชันดึงคำตอบไดนามิกด้วย ChatGPT
-// function getDynamicAnswerWithChatGPT($conn, $message, $session_id)
-// {
-//     try {
-//         $questions = splitQuestionsWithChatGPT($message);
-//         $finalAnswer = '';
-
-//         // foreach ($questions as $individualQuestion) {
-//         $individualQuestion = $message;
-//         list($metadata, $sampleData) = getDatabaseMetadataAndSamples($conn, 'usedcar');
-//         $filteredMetadata = filterMetadataByQuestion($metadata, $individualQuestion);
-//         $isJoinRequired = count($filteredMetadata) > 1;
-
-//         $prompt = buildChatGPTPrompt($individualQuestion, $filteredMetadata, $sampleData, $isJoinRequired);
-
-//         $response = callChatGPTAPI($prompt);
-
-//         // print_r($response); exit();
-
-//         $query = extractQueryFromResponse($response);
-//         // echo '1'; exit();
-//         if (!$query) throw new Exception("ไม่พบ SQL query สำหรับคำถามนี้");
-//         // echo '1'; exit();
-//         // echo '1'; exit(); 10วิ
-//         $queryResult = processChatGPTResponse($conn, $query, $metadata, array_keys($filteredMetadata));
-//         // echo '1'; exit(); ไว
-//         // $answerFromGPT = formatResponseWithChatGPT($queryResult);
-//         $answerFromGPT = $queryResult;
-//         // echo '1'; exit(); ช้าเลย
-//         $html = '';
-
-//         // สร้างตาราง HTML
-//         $html .= "<table border='1'>";
-//         $html .= "<tr>";
-//         foreach ($queryResult['columns'] as $column) {
-//             $html .= "<th>$column</th>";
-//         }
-//         $html .= "</tr>";
-
-//         foreach ($queryResult['rows'] as $row) {
-//             $html .= "<tr>";
-//             foreach ($row as $value) {
-//                 $html .= "<td>$value</td>";
-//             }
-//             $html .= "</tr>";
-//         }
-//         $html .= "</table>";
-
-//         // $finalAnswer = $html;
-
-//         $answerFromGPT = formatResponseWithChatGPT(json_encode($queryResult, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
-//         $finalAnswer = $answerFromGPT;
-
-//         logPromptData($individualQuestion, $prompt, $response, $queryResult, $answerFromGPT);
-//         // }
-
-//         return $finalAnswer;
-//     } catch (Exception $e) {
-//         return getGeneralAnswer($message);
-//     }
-// }
 
 // ฟังก์ชันดึงคำตอบไดนามิกด้วย ChatGPT
 function getDynamicAnswerWithChatGPT($conn, $message, $session_id)
