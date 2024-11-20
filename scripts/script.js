@@ -87,12 +87,21 @@ function addMessageToChatBox(className, message) {
   if (className == "assist-message") {
     var items = document.querySelectorAll(".tyn-qa-message");
     var lastchild = items[items.length - 1];
-    $(lastchild).typed({
+    // $(lastchild).typed({
+    //   strings: [message],
+    //   typeSpeed: -20,
+    //   onComplete: (self) => {
+    //     $("#box-typing").removeClass("disabled")
+    //   }
+    // });
+
+    var typed = new Typed(lastchild, {
       strings: [message],
       typeSpeed: -20,
-      onComplete() {
-        $("#box-typing").removeClass("disabled");
-      },
+      onComplete: (self) => {
+        console.log('done')
+        $("#box-typing").removeClass("disabled")
+      }
     });
   }
 }

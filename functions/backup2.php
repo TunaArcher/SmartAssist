@@ -86,7 +86,7 @@ function cacheAnswerToFile($question, $answer)
 
 
 // ฟังก์ชันหลักสำหรับดึง Metadata และตัวอย่างข้อมูล
-function getDatabaseMetadataAndSamples($conn, $databaseName, $sampleLimit = 1)
+function getDatabaseMetadataAndSamples($conn, $databaseName, $sampleLimit = 2)
 {
     // ยกเว้นตาราง
     $excludedTables =  [
@@ -376,11 +376,7 @@ function getPatterns()
 
         // เกี่ยวกับรถ
         [
-            'pattern' => '/(รถ|รถยนต์|รุ่น|ยี่ห้อ|ปี|สี|เกียร์|ไมล์|เลขทะเบียน|สต็อก)/',
-            'related_tables' => ['car_stock', 'car_stock_detail_buy', 'car_stock_owner']
-        ],
-        [
-            'pattern' => '/(ราคา)/',
+            'pattern' => '/(รถ|รถยนต์|รุ่น|ยี่ห้อ|ปี|สี|เกียร์|ไมล์|เลขทะเบียน|สต็อก|ราคา)/',
             'related_tables' => ['car_stock', 'car_stock_detail_buy', 'car_stock_owner', 'car_stock_finance', 'documents', 'bookings']
         ],
 
@@ -428,58 +424,20 @@ function getPatterns()
     ];
 }
 
-// function buildChatGPTPrompt($message, $filteredMetadata, $sampleData, $isJoinRequired = false)
-// {
-//     $prompt = "You are an advanced AI assistant. Based on the provided database structure and sample data, generate an SQL query to answer the following question.\n\n";
-
-//     $prompt .= "**Database Metadata**:\n";
-//     foreach ($filteredMetadata as $table => $tableData) {
-//         $prompt .= "- Table: $table\n";
-//         $prompt .= "  Description: {$tableData['description']}\n";
-//         $prompt .= "  Columns:\n";
-//         foreach ($tableData['columns'] as $column => $colData) {
-//             $prompt .= "    - $column ({$colData['type']}): {$colData['description']}\n";
-//         }
-//     }
-
-//     $prompt .= "\n**Sample Data**:\n";
-//     foreach ($sampleData as $table => $rows) {
-//         if (isset($filteredMetadata[$table])) {
-//             $prompt .= "- $table: " . json_encode($rows, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . "\n";
-//         }
-//     }
-
-//     $prompt .= "\n**Question**:\n";
-//     $prompt .= "\"$message\"\n\n";
-
-//     $prompt .= "**Instructions**:\n";
-//     $prompt .= "- Analyze the provided database metadata and sample data.\n";
-//     $prompt .= "- Include all relevant tables and columns in your query.\n";
-//     $prompt .= "- Ensure the query is optimized and includes conditions explicitly mentioned in the question.\n";
-
-//     if ($isJoinRequired) {
-//         $prompt .= "- Use JOIN operations if required to combine data from multiple tables.\n";
-//     }
-
-//     return $prompt;
-// }
-
 function buildChatGPTPrompt($message, $filteredMetadata, $sampleData, $isJoinRequired = false)
 {
-    // เริ่มต้น Prompt
-    $prompt = "You are an AI assistant. Based on the database structure and sample data, generate an SQL query to answer the question.\n\n";
+    $prompt = "You are an advanced AI assistant. Based on the provided database structure and sample data, generate an SQL query to answer the following question.\n\n";
 
-    // เพิ่ม Metadata พร้อม Description
     $prompt .= "**Database Metadata**:\n";
     foreach ($filteredMetadata as $table => $tableData) {
         $prompt .= "- Table: $table\n";
+        $prompt .= "  Description: {$tableData['description']}\n";
         $prompt .= "  Columns:\n";
         foreach ($tableData['columns'] as $column => $colData) {
             $prompt .= "    - $column ({$colData['type']}): {$colData['description']}\n";
         }
     }
 
-    // เพิ่ม Sample Data
     $prompt .= "\n**Sample Data**:\n";
     foreach ($sampleData as $table => $rows) {
         if (isset($filteredMetadata[$table])) {
@@ -487,21 +445,20 @@ function buildChatGPTPrompt($message, $filteredMetadata, $sampleData, $isJoinReq
         }
     }
 
-    // เพิ่มคำถาม
     $prompt .= "\n**Question**:\n";
     $prompt .= "\"$message\"\n\n";
 
-    // เพิ่มคำแนะนำแบบกระชับ
     $prompt .= "**Instructions**:\n";
-    $prompt .= "- Use the provided metadata and sample data to create the SQL query.\n";
-    $prompt .= "- Include relevant tables and columns based on the question.\n";
+    $prompt .= "- Analyze the provided database metadata and sample data.\n";
+    $prompt .= "- Include all relevant tables and columns in your query.\n";
+    $prompt .= "- Ensure the query is optimized and includes conditions explicitly mentioned in the question.\n";
+
     if ($isJoinRequired) {
-        $prompt .= "- Use JOIN operations if necessary to combine data.\n";
+        $prompt .= "- Use JOIN operations if required to combine data from multiple tables.\n";
     }
 
     return $prompt;
 }
-
 function processChatGPTResponse($conn, $query, $metadata, $tableNames)
 {
     $result = $conn->query($query);
