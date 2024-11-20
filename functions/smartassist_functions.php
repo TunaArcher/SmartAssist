@@ -376,13 +376,13 @@ function getPatterns()
 
         // เกี่ยวกับรถ
         [
-            'pattern' => '/(รถ|รถยนต์|รุ่น|ยี่ห้อ|ปี|สี|เกียร์|ไมล์|เลขทะเบียน|สต็อก)/',
+            'pattern' => '/(รถ|รถยนต์|รุ่น|ยี่ห้อ|ปี|สี|เกียร์|ไมล์|เลขทะเบียน|สต็อก|ราคารถ)/',
             'related_tables' => ['car_stock', 'car_stock_detail_buy', 'car_stock_owner']
         ],
-        [
-            'pattern' => '/(ราคา)/',
-            'related_tables' => ['car_stock', 'car_stock_detail_buy', 'car_stock_owner', 'car_stock_finance', 'documents', 'bookings']
-        ],
+        // [
+        //     'pattern' => '/(ราคา)/',
+        //     'related_tables' => ['car_stock', 'car_stock_detail_buy', 'car_stock_owner', 'car_stock_finance', 'documents', 'bookings']
+        // ],
 
         // เกี่ยวกับลูกค้า
         [
