@@ -20,6 +20,8 @@ function sendMessage() {
   // แสดงสถานะการกำลังประมวลผล
   showTypingIndicator();
 
+  $("#box-typing").addClass("disabled");
+
   // ส่งคำถามไปยัง SmartAssist API
   fetch("api/smartassist.php", {
     method: "POST",
@@ -29,12 +31,18 @@ function sendMessage() {
     .then((response) => response.json())
     .then((data) => {
       removeTypingIndicator();
-      addMessageToChatBox("assist-message", data.answer || "ไม่มีคำตอบที่เหมาะสม");
+      addMessageToChatBox(
+        "assist-message",
+        data.answer || "ไม่มีคำตอบที่เหมาะสม"
+      );
     })
     .catch((error) => {
       console.error("Error:", error);
       removeTypingIndicator();
-      addMessageToChatBox("assist-message", "ขออภัยค่ะ เกิดข้อผิดพลาดในการประมวลผล");
+      addMessageToChatBox(
+        "assist-message",
+        "ขออภัยค่ะ เกิดข้อผิดพลาดในการประมวลผล"
+      );
     });
 }
 
@@ -58,12 +66,16 @@ function addMessageToChatBox(className, message) {
                       <img src="https://cdn-icons-png.flaticon.com/512/11865/11865338.png" alt="">
                   </div>
                   <ul class="d-flex flex-column mt-2">
-                      <li><button class="btn btn-icon btn-md btn-pill btn-transparent">${renderIcon('thumbs-up')}</button></li>
-                      <li><button class="btn btn-icon btn-md btn-pill btn-transparent">${renderIcon('thumbs-down')}</button></li>
+                      <li><button class="btn btn-icon btn-md btn-pill btn-transparent">${renderIcon(
+                        "thumbs-up"
+                      )}</button></li>
+                      <li><button class="btn btn-icon btn-md btn-pill btn-transparent">${renderIcon(
+                        "thumbs-down"
+                      )}</button></li>
                   </ul>
               </div>
           </div>
-          <div class="tyn-qa-message tyn-text-block">${message}</div>
+          <div class="tyn-qa-message tyn-text-block"></div>
       </div>`,
   };
 
@@ -71,6 +83,18 @@ function addMessageToChatBox(className, message) {
   messageElement.innerHTML = messageTemplate[className] || "";
   chatBox.appendChild(messageElement);
   scrollToBottom(chatBox);
+
+  if (className == "assist-message") {
+    var items = document.querySelectorAll(".tyn-qa-message");
+    var lastchild = items[items.length - 1];
+    $(lastchild).typed({
+      strings: [message],
+      typeSpeed: -20,
+      onComplete() {
+        $("#box-typing").removeClass("disabled");
+      },
+    });
+  }
 }
 
 function showTypingIndicator() {

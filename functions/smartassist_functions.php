@@ -4,6 +4,33 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+define('CACHE_FILE', 'question_cache.json');
+
+/**
+ * ตรวจสอบคำถามในแคช
+ */
+function getCachedAnswerFromFile($question)
+{
+    if (!file_exists(CACHE_FILE)) {
+        return null;
+    }
+
+    $cache = json_decode(file_get_contents(CACHE_FILE), true);
+    return $cache[$question] ?? null;
+}
+
+/**
+ * บันทึกคำถามและคำตอบลงในแคชไฟล์
+ */
+function cacheAnswerToFile($question, $answer)
+{
+    $cache = file_exists(CACHE_FILE) ? json_decode(file_get_contents(CACHE_FILE), true) : [];
+    $cache[$question] = $answer;
+
+    // บันทึกกลับไปที่ไฟล์
+    file_put_contents(CACHE_FILE, json_encode($cache, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+}
+
 // ฟังก์ชันหลักสำหรับดึง Metadata และตัวอย่างข้อมูล
 function getDatabaseMetadataAndSamples($conn, $databaseName, $sampleLimit = 2)
 {
@@ -515,6 +542,13 @@ function logPromptData($message, $prompt, $response, $queryResult, $answerFromGP
 function getDynamicAnswerWithChatGPT($conn, $message, $session_id)
 {
     try {
+
+        // ตรวจสอบคำถามในไฟล์แคชก่อน
+        $cachedAnswer = getCachedAnswerFromFile($message);
+        if ($cachedAnswer) {
+            return $cachedAnswer;
+        }
+
         // ดึง Metadata และตัวอย่างข้อมูล
         $data = getDatabaseMetadataAndSamples($conn, 'usedcar');
         $filteredMetadata = filterMetadataByQuestion($data['metadata'], $message);
@@ -523,17 +557,22 @@ function getDynamicAnswerWithChatGPT($conn, $message, $session_id)
         // สร้าง Prompt
         $prompt = buildChatGPTPrompt($message, $filteredMetadata, $data['samples'], $isJoinRequired);
 
-        // เรียก API
+        // เรียก API เพื่อสร้าง SQL Query
         $response = callChatGPTAPI($prompt);
         $query = extractQueryFromResponse($response);
 
         if (!$query) throw new Exception("ไม่พบ SQL query สำหรับคำถามนี้");
 
-        // ดึงผลลัพธ์
+        // ดึงผลลัพธ์จากฐานข้อมูล
         $queryResult = processChatGPTResponse($conn, $query, $data['metadata'], array_keys($filteredMetadata));
 
+        // แปลงผลลัพธ์เป็นคำตอบที่เข้าใจง่าย
         $answerFromGPT = formatResponseWithChatGPT($message, json_encode($queryResult, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
 
+        // บันทึกคำถามและคำตอบลงในไฟล์แคช
+        cacheAnswerToFile($message, $answerFromGPT);
+
+        // บันทึกข้อมูล Log
         logPromptData($message, $prompt, $response, $queryResult, $answerFromGPT);
 
         return $answerFromGPT;

@@ -130,6 +130,13 @@
             }
         }
     </style>
+
+    <style>
+        .disabled {
+            pointer-events: none;
+            opacity: 0.6;
+        }
+    </style>
 </head>
 
 <body class="tyn-body">
@@ -187,13 +194,14 @@
                         </button>
                     </li>
                 </ul><!-- .tyn-list-inline -->
-                <div class="tyn-chat-body m-4 rounded-3" data-simplebar>
+                <div class="tyn-chat-body m-4 rounded-3">
                     <div class="container px-0">
                         <div class="tyn-qa tyn-qa-bubbly" id="chat-box">
-                    
+
                         </div><!-- .tyn-qa -->
                     </div><!-- .container -->
                 </div><!-- .tyn-chat-body -->
+                <div id="box-typing" class="">
                 <div class="tyn-chat-form border-0 px-4">
                     <div class="container px-0">
                         <div class="ps-3 pe-4 py-3 bg-white mb-4 rounded-3">
@@ -210,6 +218,7 @@
                         </div>
                     </div><!-- .container -->
                 </div><!-- .tyn-chat-form -->
+                </div>
             </div><!-- .tyn-main -->
         </div><!-- .tyn-content -->
     </div><!-- .tyn-root -->
@@ -217,7 +226,12 @@
     <script src="./assets/js/bundle.js?v1310"></script>
     <script src="./assets/js/app.js?v1310"></script>
 
+    <script src="https://code.jquery.com/jquery-3.7.1.js" integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4=" crossorigin="anonymous"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/typed.js/1.1.1/typed.min.js"></script>
+
     <script src="./scripts/script.js"></script>
+
 </body>
 
 </html>
