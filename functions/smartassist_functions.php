@@ -5,12 +5,57 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 define('CACHE_FILE', 'question_cache.json');
+define('CACHE_TIMESTAMP_FILE', 'cache_timestamp.txt');
+define('CACHE_EXPIRY_TIME', 600); // 10 นาที (600 วินาที)
+
+/**
+ * ตรวจสอบว่าแคชหมดอายุหรือไม่
+ */
+function isCacheExpired()
+{
+    if (!file_exists(CACHE_TIMESTAMP_FILE)) {
+        return true; // หากไม่มีไฟล์ timestamp ให้ถือว่าแคชหมดอายุ
+    }
+
+    $lastCacheTime = (int) file_get_contents(CACHE_TIMESTAMP_FILE);
+    $currentTime = time();
+
+    return ($currentTime - $lastCacheTime) >= CACHE_EXPIRY_TIME;
+}
+
+/**
+ * ล้างแคช
+ */
+function clearCacheFile()
+{
+    if (file_exists(CACHE_FILE)) {
+        unlink(CACHE_FILE);
+    }
+
+    if (file_exists(CACHE_TIMESTAMP_FILE)) {
+        unlink(CACHE_TIMESTAMP_FILE);
+    }
+}
+
+/**
+ * อัปเดตเวลาแคชล่าสุด
+ */
+function updateCacheTimestamp()
+{
+    file_put_contents(CACHE_TIMESTAMP_FILE, time());
+}
 
 /**
  * ตรวจสอบคำถามในแคช
  */
 function getCachedAnswerFromFile($question)
 {
+    // ตรวจสอบว่าแคชหมดอายุหรือไม่
+    if (isCacheExpired()) {
+        clearCacheFile();
+        return null; // ล้างแคชและไม่คืนคำตอบเก่า
+    }
+
     if (!file_exists(CACHE_FILE)) {
         return null;
     }
@@ -24,12 +69,21 @@ function getCachedAnswerFromFile($question)
  */
 function cacheAnswerToFile($question, $answer)
 {
+    // ตรวจสอบว่าแคชหมดอายุหรือไม่
+    if (isCacheExpired()) {
+        clearCacheFile(); // ล้างแคช
+    }
+
     $cache = file_exists(CACHE_FILE) ? json_decode(file_get_contents(CACHE_FILE), true) : [];
     $cache[$question] = $answer;
 
     // บันทึกกลับไปที่ไฟล์
     file_put_contents(CACHE_FILE, json_encode($cache, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+
+    // อัปเดตเวลาล่าสุด
+    updateCacheTimestamp();
 }
+
 
 // ฟังก์ชันหลักสำหรับดึง Metadata และตัวอย่างข้อมูล
 function getDatabaseMetadataAndSamples($conn, $databaseName, $sampleLimit = 2)
